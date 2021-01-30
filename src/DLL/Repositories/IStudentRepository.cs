@@ -7,67 +7,67 @@ using Microsoft.EntityFrameworkCore;
 namespace DLL.Repositories
 {
 
-    public interface IDepartmentRepository
+    public interface IStudentRepository
     {
-        Task<Department> InsertAsync(Department department);
-        Task<List<Department>> GetAllAsync();
-        Task<Department> GetAAsync(string code);
-        Task<Department> DeleteAsync(string code);
-        Task<Department> UpdateAsync(string code, Department department);
+        Task<Student> InsertAsync(Student student);
+        Task<List<Student>> GetAllAsync();
+        Task<Student> GetAAsync(string code);
+        Task<Student> DeleteAsync(string code);
+        Task<Student> UpdateAsync(string code, Student student);
     }
 
 
 
-    public class DepartmentRepository:IDepartmentRepository
+    public class StudentRepository:IStudentRepository
     {
         private readonly ApplicationDbContext _context;
 
 
-        public DepartmentRepository(ApplicationDbContext context)
+        public StudentRepository(ApplicationDbContext context)
         {
             _context = context;
         }
 
 
-        public async Task<Department> InsertAsync(Department department)
+        public async Task<Student> InsertAsync(Student student)
         {
-            await _context.Departments.AddAsync(department);
+            await _context.Students.AddAsync(student);
             await _context.SaveChangesAsync();
-            return department;
+            return student;
         }
 
 
-        public async Task<List<Department>> GetAllAsync()
+        public async Task<List<Student>> GetAllAsync()
         {
-            return await _context.Departments.ToListAsync();
+            return await _context.Students.ToListAsync();
         }
 
 
-        public async Task<Department> GetAAsync(string code)
+        public async Task<Student> GetAAsync(string code)
         {
-            var department = await _context.Departments.FirstOrDefaultAsync(x => x.Code == code);            
-            return department;
+            var student = await _context.Students.FirstOrDefaultAsync(x => x.Email == code);            
+            return student;
         }
 
 
-        public async Task<Department> DeleteAsync(string code)
+        public async Task<Student> DeleteAsync(string code)
         {
-            var department = await _context.Departments.FirstOrDefaultAsync(x => x.Code == code);
+            var student = await _context.Students.FirstOrDefaultAsync(x => x.Email == code);
 
-            _context.Departments.Remove(department);
+            _context.Students.Remove(student);
             await _context.SaveChangesAsync();
-            return department;
+            return student;
         }
 
 
-        public async Task<Department> UpdateAsync(string code, Department department)
+        public async Task<Student> UpdateAsync(string code, Student student)
         {
-            var departmentToUpdate = await _context.Departments.FirstOrDefaultAsync(x => x.Code == code);
+            var studentToUpdate = await _context.Students.FirstOrDefaultAsync(x => x.Email == code);
 
-            departmentToUpdate.Name = department.Name;
-            _context.Departments.Update(departmentToUpdate);
+            studentToUpdate.Name = student.Name;
+            _context.Students.Update(studentToUpdate);
             await _context.SaveChangesAsync();
-            return departmentToUpdate;
+            return studentToUpdate;
         }
     }
 }
