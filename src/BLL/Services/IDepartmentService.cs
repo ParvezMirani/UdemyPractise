@@ -24,33 +24,24 @@ namespace BLL.Services
     public class DepartmentService : IDepartmentService
     {
         private readonly IDepartmentRepository _departmentRepository;
+
         public DepartmentService(IDepartmentRepository departmentRepository)
         {
             _departmentRepository = departmentRepository;
         }
 
-        public async Task<Department> DeleteAsync(string code)
+
+        public async Task<List<Department>> GetAllAsync()
         {
-            var department = await _departmentRepository.GetAAsync(code);
-
-            if(department == null)
-            {
-                throw new ApplicationValidationException("Department not found");
-            }
-
-            if (await _departmentRepository.DeleteAsync(department))
-            {
-                return department;
-            }
-
-            throw new ApplicationValidationException("Problem occured while deleting Department");
+            return await _departmentRepository.GetListAsync();
         }
+
 
         public async Task<Department> GetAAsync(string code)
         {
-            var department = await _departmentRepository.GetAAsync(code);
+            var department = await _departmentRepository.FindSingleAsync(x => x.Code == code);
 
-            if(department == null)
+            if (department == null)
             {
                 throw new ApplicationValidationException("Department not found");
             }
@@ -58,46 +49,26 @@ namespace BLL.Services
             return department;
         }
 
-        public async Task<List<Department>> GetAllAsync()
-        {
-            return await _departmentRepository.GetAllAsync();
-        }
 
         public async Task<Department> InsertAsync(DepartmentInsertRequestViewModel request)
         {
             Department adepartment = new Department();
             adepartment.Code = request.Code;
             adepartment.Name = request.Name;
-            return await _departmentRepository.InsertAsync(adepartment);
-        }
+            await _departmentRepository.CreateAsync(adepartment);
 
-        public async Task<bool> IsCodeExists(string code)
-        {
-            var department = await _departmentRepository.FindByCode(code);
-
-            if (department == null)
+            if (await _departmentRepository.SaveCompletedAsync())
             {
-                return true;
+                return adepartment;
             }
 
-            return false;
+            throw new ApplicationValidationException("Adding new department failed");
         }
 
-        public async Task<bool> IsNameExists(string name)
-        {
-            var department = await _departmentRepository.FindByName(name);
-
-            if (department == null)
-            {
-                return true;
-            }
-
-            return false;
-        }
 
         public async Task<Department> UpdateAsync(string code, Department updateDepartment)
         {
-            var department = await _departmentRepository.GetAAsync(code);
+            var department = await _departmentRepository.FindSingleAsync(x => x.Code == code);
 
             if (department == null)
             {
@@ -106,8 +77,8 @@ namespace BLL.Services
 
             if (!string.IsNullOrWhiteSpace(updateDepartment.Code))
             {
-                var existAlreadyCode = await _departmentRepository.FindByCode(updateDepartment.Code);
-                if(existAlreadyCode != null)
+                var existAlreadyCode = await _departmentRepository.FindSingleAsync(x => x.Code == updateDepartment.Code);
+                if (existAlreadyCode != null)
                 {
                     throw new ApplicationValidationException($"Code : '{updateDepartment.Code}' already exists in our system");
                 }
@@ -117,7 +88,7 @@ namespace BLL.Services
 
             if (!string.IsNullOrWhiteSpace(updateDepartment.Name))
             {
-                var existAlreadyName = await _departmentRepository.FindByName(updateDepartment.Name);
+                var existAlreadyName = await _departmentRepository.FindSingleAsync(x => x.Name == updateDepartment.Name);
                 if (existAlreadyName != null)
                 {
                     throw new ApplicationValidationException($"Name : '{updateDepartment.Name}' already exists in our system");
@@ -126,12 +97,62 @@ namespace BLL.Services
                 department.Name = updateDepartment.Name;
             }
 
-            if(await _departmentRepository.UpdateAsync(department))
+            _departmentRepository.Update(department);
+
+            if (await _departmentRepository.SaveCompletedAsync())
             {
                 return department;
             }
 
             throw new ApplicationValidationException("Problem Occured updating department");
         }
+
+
+        public async Task<Department> DeleteAsync(string code)
+        {
+            var department = await _departmentRepository.FindSingleAsync(x => x.Code == code);
+
+            if (department == null)
+            {
+                throw new ApplicationValidationException("Department not found");
+            }
+
+            _departmentRepository.Delete(department);
+
+            if (await _departmentRepository.SaveCompletedAsync())
+            {
+                return department;
+            }
+
+            throw new ApplicationValidationException("Problem occured while deleting Department");
+        }
+
+
+
+        public async Task<bool> IsCodeExists(string code)
+        {
+            var department = await _departmentRepository.FindSingleAsync(x => x.Code == code);
+
+            if (department == null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+
+        public async Task<bool> IsNameExists(string name)
+        {
+            var department = await _departmentRepository.FindSingleAsync(x => x.Name == name);
+
+            if (department == null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
     }
 }

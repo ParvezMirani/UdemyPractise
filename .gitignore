@@ -483,3 +483,5 @@ MigrationBackup/
 .ionide/
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,aspnetcore
+.vscode/launch.json
+.vscode/tasks.json
