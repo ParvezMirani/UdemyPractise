@@ -39,6 +39,18 @@ namespace DLL.DBContext
                         .HasQueryFilter(GetIsDeletedRestriction(entity.ClrType));
                 }
             }
+
+            modelBuilder.Entity<CourseStudent>()
+                .HasKey(bc => new { bc.CourseId, bc.StudentId });
+            modelBuilder.Entity<CourseStudent>()
+                .HasOne(bc => bc.Course)
+                .WithMany(b => b.CourseStudents)
+                .HasForeignKey(bc => bc.CourseId);
+            modelBuilder.Entity<CourseStudent>()
+                .HasOne(bc => bc.Student)
+                .WithMany(c => c.CourseStudents)
+                .HasForeignKey(bc => bc.StudentId);
+
             base.OnModelCreating(modelBuilder);
         }
 
@@ -50,13 +62,23 @@ namespace DLL.DBContext
 
             foreach (var entry in entries)
             {
-                switch (entry.State)
+                if(entry.Entity is ITrackable trackable)
                 {
-                    case EntityState.Deleted:
-                        entry.Property(_isDeletedProperty).CurrentValue = true;
-                        entry.State = EntityState.Modified;
-                        break;
-                }
+                    switch (entry.State)
+                    {
+                        case EntityState.Added:
+                            trackable.CreatedAt = DateTimeOffset.Now;
+                            trackable.LastUpdatedAt = DateTimeOffset.Now;
+                            break;
+                        case EntityState.Modified:
+                            trackable.LastUpdatedAt = DateTimeOffset.Now;
+                            break;
+                        case EntityState.Deleted:
+                            entry.Property(_isDeletedProperty).CurrentValue = true;
+                            entry.State = EntityState.Modified;
+                            break;
+                    }
+                }                
             }
         }
 
@@ -77,5 +99,9 @@ namespace DLL.DBContext
         public DbSet<Department> Departments { get; set; }
 
         public DbSet<Student> Students { get; set; }
+
+        public DbSet<Course> Course { get; set; }
+
+        public DbSet<CourseStudent> CourseStudent { get; set; }
     }
 }

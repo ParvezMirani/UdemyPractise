@@ -4,14 +4,16 @@ using DLL.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DLL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210131105540_CourseTableCourseStudentMigration")]
+    partial class CourseTableCourseStudentMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,7 +23,7 @@ namespace DLL.Migrations
 
             modelBuilder.Entity("DLL.Models.Course", b =>
                 {
-                    b.Property<int>("CourseId")
+                    b.Property<int>("CourseID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .UseIdentityColumn();
@@ -50,7 +52,7 @@ namespace DLL.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("CourseId");
+                    b.HasKey("CourseID");
 
                     b.ToTable("Course");
                 });
@@ -178,7 +180,7 @@ namespace DLL.Migrations
             modelBuilder.Entity("DLL.Models.Student", b =>
                 {
                     b.HasOne("DLL.Models.Department", "Department")
-                        .WithMany("Students")
+                        .WithMany("Student")
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -193,7 +195,7 @@ namespace DLL.Migrations
 
             modelBuilder.Entity("DLL.Models.Department", b =>
                 {
-                    b.Navigation("Students");
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("DLL.Models.Student", b =>

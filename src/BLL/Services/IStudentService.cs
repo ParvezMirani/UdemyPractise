@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using BLL.Request;
 using DLL.Models;
 using DLL.Repositories;
 using Utility.Exceptions;
@@ -9,26 +11,30 @@ namespace BLL.Services
 {
     public interface IStudentService
     {
-        Task<List<Student>> GetAllAsync();
+        IQueryable<Student> GetAll();
         Task<Student> GetAAsync(string email);
-        Task<Student> InsertAsync(Student student);
+        Task<Student> InsertAsync(StudentInsertRequestViewModel student);
         Task<Student> UpdateAsync(string email, Student student);
         Task<Student> DeleteAsync(string email);
+        Task<bool> IsEmailExists(string email);
+        Task<bool> IsNameExists(string name);
+        Task<bool> IsIdExists(int studentId);
     }
 
 
     public class StudentService : IStudentService
     {
-        private readonly IStudentRepository _studentRepository;
-        public StudentService(IStudentRepository studentRepository)
+        private readonly IUnitOfWork _unitOfWork;
+
+        public StudentService(IUnitOfWork unitOfWork)
         {
-            _studentRepository = studentRepository;
+            _unitOfWork = unitOfWork;
         }
 
 
         public async Task<Student> GetAAsync(string email)
         {
-            var student = await _studentRepository.FindSingleAsync(x=>x.Email==email);
+            var student = await _unitOfWork.StudentRepository.FindSingleAsync(x=>x.Email==email);
 
             if(student == null)
             {
@@ -39,26 +45,26 @@ namespace BLL.Services
         }
 
 
-        public async Task<List<Student>> GetAllAsync()
+        public IQueryable<Student> GetAll()
         {
-            return await _studentRepository.GetListAsync();
+            return _unitOfWork.StudentRepository.QueryAll();
         }
 
 
-        public async Task<Student> InsertAsync(Student student)
+        public async Task<Student> InsertAsync(StudentInsertRequestViewModel studentInsertRequest)
         {
-            var studentExists = await _studentRepository.FindSingleAsync(x => x.Email == student.Email);
-
-            if(studentExists!= null)
+            var newStudent = new Student()
             {
-                throw new ApplicationValidationException($"Student with {student.Email} already exist");
-            }
+                Email = studentInsertRequest.Email,
+                Name = studentInsertRequest.Name,
+                DepartmentId = studentInsertRequest.DepartmentId
+            };
 
-            await _studentRepository.CreateAsync(student);
+            await _unitOfWork.StudentRepository.CreateAsync(newStudent);
 
-            if (await _studentRepository.SaveCompletedAsync())
+            if (await _unitOfWork.SaveCompletedAsync())
             {
-                return student;
+                return newStudent;
             }
             throw new ApplicationValidationException("Problem occured CREATING student");
 
@@ -67,7 +73,7 @@ namespace BLL.Services
 
         public async Task<Student> UpdateAsync(string email, Student student)
         {
-            var dbStudent = await _studentRepository.FindSingleAsync(x => x.Email == email);
+            var dbStudent = await _unitOfWork.StudentRepository.FindSingleAsync(x => x.Email == email);
 
             if (dbStudent == null)
             {
@@ -76,9 +82,9 @@ namespace BLL.Services
 
             dbStudent.Name = student.Name;
 
-            _studentRepository.Update(dbStudent);
+            _unitOfWork.StudentRepository.Update(dbStudent);
 
-            if (await _studentRepository.SaveCompletedAsync())
+            if (await _unitOfWork.SaveCompletedAsync())
             {
                 return dbStudent;
             }
@@ -88,20 +94,56 @@ namespace BLL.Services
 
         public async Task<Student> DeleteAsync(string email)
         {
-            var student = await _studentRepository.FindSingleAsync(x => x.Email == email);
+            var student = await _unitOfWork.StudentRepository.FindSingleAsync(x => x.Email == email);
 
             if (student == null)
             {
                 throw new ApplicationValidationException("Student Not fountd");
             }
 
-            _studentRepository.Delete(student);
+            _unitOfWork.StudentRepository.Delete(student);
 
-            if (await _studentRepository.SaveCompletedAsync())
+            if (await _unitOfWork.SaveCompletedAsync())
             {
                 return student;
             }
             throw new ApplicationValidationException("Problem occured DELETING student");
+        }
+
+        public async Task<bool> IsEmailExists(string email)
+        {
+            var student = await _unitOfWork.StudentRepository.FindSingleAsync(x => x.Email == email);
+
+            if(student == null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> IsNameExists(string name)
+        {
+            var student = await _unitOfWork.StudentRepository.FindSingleAsync(x => x.Name == name);
+
+            if (student == null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> IsIdExists(int studentId)
+        {
+            var student = await _unitOfWork.StudentRepository.FindSingleAsync(x => x.StudentId == studentId);
+
+            if (student == null)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

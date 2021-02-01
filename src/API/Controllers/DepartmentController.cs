@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using BLL.Request;
 using BLL.Services;
 using DLL.Models;
+using LightQuery.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -15,10 +16,11 @@ namespace API.Controllers
             _departmentService = departmentService;
         }
 
+        [AsyncLightQuery(forcePagination: true, defaultPageSize: 10, defaultSort: "departmentId desc")]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public IActionResult GetAll()
         {
-            return Ok(await _departmentService.GetAllAsync());
+            return Ok(_departmentService.GetAllAsync());
         }
 
         [HttpGet("{code}")]

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using BLL.Request;
 using DLL.Models;
@@ -10,7 +11,7 @@ namespace BLL.Services
 {
     public interface IDepartmentService
     {
-        Task<List<Department>> GetAllAsync();
+        IQueryable<Department> GetAllAsync();
         Task<Department> GetAAsync(string code);
         Task<Department> InsertAsync(DepartmentInsertRequestViewModel request);
         Task<Department> UpdateAsync(string code, Department department);
@@ -18,28 +19,29 @@ namespace BLL.Services
 
         Task<bool> IsCodeExists(string code);
         Task<bool> IsNameExists(string name);
+        Task<bool> IsIdExists(int id);
     }
 
 
     public class DepartmentService : IDepartmentService
     {
-        private readonly IDepartmentRepository _departmentRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public DepartmentService(IDepartmentRepository departmentRepository)
+        public DepartmentService(IUnitOfWork unitOfWork)
         {
-            _departmentRepository = departmentRepository;
+            _unitOfWork = unitOfWork;
         }
 
 
-        public async Task<List<Department>> GetAllAsync()
+        public IQueryable<Department> GetAllAsync()
         {
-            return await _departmentRepository.GetListAsync();
+            return _unitOfWork.DepartmentRepository.QueryAll();
         }
 
 
         public async Task<Department> GetAAsync(string code)
         {
-            var department = await _departmentRepository.FindSingleAsync(x => x.Code == code);
+            var department = await _unitOfWork.DepartmentRepository.FindSingleAsync(x => x.Code == code);
 
             if (department == null)
             {
@@ -55,9 +57,9 @@ namespace BLL.Services
             Department adepartment = new Department();
             adepartment.Code = request.Code;
             adepartment.Name = request.Name;
-            await _departmentRepository.CreateAsync(adepartment);
+            await _unitOfWork.DepartmentRepository.CreateAsync(adepartment);
 
-            if (await _departmentRepository.SaveCompletedAsync())
+            if (await _unitOfWork.SaveCompletedAsync())
             {
                 return adepartment;
             }
@@ -68,7 +70,7 @@ namespace BLL.Services
 
         public async Task<Department> UpdateAsync(string code, Department updateDepartment)
         {
-            var department = await _departmentRepository.FindSingleAsync(x => x.Code == code);
+            var department = await _unitOfWork.DepartmentRepository.FindSingleAsync(x => x.Code == code);
 
             if (department == null)
             {
@@ -77,7 +79,7 @@ namespace BLL.Services
 
             if (!string.IsNullOrWhiteSpace(updateDepartment.Code))
             {
-                var existAlreadyCode = await _departmentRepository.FindSingleAsync(x => x.Code == updateDepartment.Code);
+                var existAlreadyCode = await _unitOfWork.DepartmentRepository.FindSingleAsync(x => x.Code == updateDepartment.Code);
                 if (existAlreadyCode != null)
                 {
                     throw new ApplicationValidationException($"Code : '{updateDepartment.Code}' already exists in our system");
@@ -88,7 +90,7 @@ namespace BLL.Services
 
             if (!string.IsNullOrWhiteSpace(updateDepartment.Name))
             {
-                var existAlreadyName = await _departmentRepository.FindSingleAsync(x => x.Name == updateDepartment.Name);
+                var existAlreadyName = await _unitOfWork.DepartmentRepository.FindSingleAsync(x => x.Name == updateDepartment.Name);
                 if (existAlreadyName != null)
                 {
                     throw new ApplicationValidationException($"Name : '{updateDepartment.Name}' already exists in our system");
@@ -97,9 +99,9 @@ namespace BLL.Services
                 department.Name = updateDepartment.Name;
             }
 
-            _departmentRepository.Update(department);
+            _unitOfWork.DepartmentRepository.Update(department);
 
-            if (await _departmentRepository.SaveCompletedAsync())
+            if (await _unitOfWork.SaveCompletedAsync())
             {
                 return department;
             }
@@ -110,16 +112,16 @@ namespace BLL.Services
 
         public async Task<Department> DeleteAsync(string code)
         {
-            var department = await _departmentRepository.FindSingleAsync(x => x.Code == code);
+            var department = await _unitOfWork.DepartmentRepository.FindSingleAsync(x => x.Code == code);
 
             if (department == null)
             {
                 throw new ApplicationValidationException("Department not found");
             }
 
-            _departmentRepository.Delete(department);
+            _unitOfWork.DepartmentRepository.Delete(department);
 
-            if (await _departmentRepository.SaveCompletedAsync())
+            if (await _unitOfWork.SaveCompletedAsync())
             {
                 return department;
             }
@@ -131,7 +133,7 @@ namespace BLL.Services
 
         public async Task<bool> IsCodeExists(string code)
         {
-            var department = await _departmentRepository.FindSingleAsync(x => x.Code == code);
+            var department = await _unitOfWork.DepartmentRepository.FindSingleAsync(x => x.Code == code);
 
             if (department == null)
             {
@@ -144,7 +146,7 @@ namespace BLL.Services
 
         public async Task<bool> IsNameExists(string name)
         {
-            var department = await _departmentRepository.FindSingleAsync(x => x.Name == name);
+            var department = await _unitOfWork.DepartmentRepository.FindSingleAsync(x => x.Name == name);
 
             if (department == null)
             {
@@ -154,5 +156,16 @@ namespace BLL.Services
             return false;
         }
 
+        public async Task<bool> IsIdExists(int id)
+        {
+            var department = await _unitOfWork.DepartmentRepository.FindSingleAsync(x => x.DepartmentId == id);
+
+            if (department == null)
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
 }

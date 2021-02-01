@@ -1,6 +1,8 @@
 using System.Threading.Tasks;
+using BLL.Request;
 using BLL.Services;
 using DLL.Models;
+using LightQuery.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -14,10 +16,11 @@ namespace API.Controllers
             _studentService = studentService;
         }
 
+        [AsyncLightQuery(forcePagination: true, defaultPageSize: 10, defaultSort: "studentId desc")]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public ActionResult GetAll()
         {
-            return Ok(await _studentService.GetAllAsync());
+            return Ok(_studentService.GetAll());
         }
 
         [HttpGet("{email}")]
@@ -27,9 +30,9 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Insert(Student student)
+        public async Task<IActionResult> Insert(StudentInsertRequestViewModel studentInsertRequest)
         {
-            return Ok(await _studentService.InsertAsync(student));
+            return Ok(await _studentService.InsertAsync(studentInsertRequest));
         }
 
         [HttpPut("{email}")]

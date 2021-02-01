@@ -19,7 +19,6 @@ namespace DLL.Repositories
         void Delete(T entry);
         void DeleteRange(List<T> entryList);
         Task<T> FindSingleAsync(Expression<Func<T, bool>> expression);
-        Task<bool> SaveCompletedAsync();
 
     }
 
@@ -87,11 +86,6 @@ namespace DLL.Repositories
         public void DeleteRange(List<T> entryList)
         {
             _context.Set<T>().RemoveRange(entryList);
-        }
-
-        public async Task<bool> SaveCompletedAsync()
-        {
-            return await _context.SaveChangesAsync() > 0 ;
         }
     }
 }
