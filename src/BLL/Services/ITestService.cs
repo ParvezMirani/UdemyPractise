@@ -6,6 +6,7 @@ using Bogus;
 using DLL.DBContext;
 using DLL.Models;
 using DLL.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace BLL.Services
@@ -15,17 +16,83 @@ namespace BLL.Services
         Task InsertData();
         Task DummyData();
         Task DummyData2();
+        Task AddNewRole();
+        Task AddNewUser();
     }
 
     public class TestService : ITestService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ApplicationDbContext _context;
+        private readonly RoleManager<AppRole> _roleManager;
+        private readonly UserManager<AppUser> _userManager;
 
-        public TestService(IUnitOfWork unitOfWork, ApplicationDbContext context)
+        public TestService(IUnitOfWork unitOfWork,
+                           ApplicationDbContext context,
+                           RoleManager<AppRole> roleManager,
+                           UserManager<AppUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _context = context;
+            _roleManager = roleManager;
+            _userManager = userManager;
+        }
+
+        public async Task AddNewRole()
+        {
+            var roleList = new List<string>()
+            {
+                "admin",
+                "manager",
+                "supervisor"
+            };
+
+            foreach (var role in roleList)
+            {
+                var roleExists = await _roleManager.FindByNameAsync(role);
+
+                if (roleExists == null)
+                {
+                    await _roleManager.CreateAsync(new AppRole()
+                    {
+                        Name = role
+                    });
+                }
+            }
+        }
+
+        public async Task AddNewUser()
+        {
+            var userList = new List<AppUser>()
+            {
+                new AppUser()
+                {
+                    UserName = "prvz12@yahoo.com",
+                    Email = "prvz12@yahoo.com",
+                    FullName = "Parvez Mirani"
+                },
+                new AppUser()
+                {
+                    UserName = "devakotu@gmail.com",
+                    Email = "devakotu@gmail.com",
+                    FullName="DevaKotu"
+                }
+            };
+
+            foreach (var user in userList)
+            {
+                var userExists = await _userManager.FindByEmailAsync(user.Email);
+
+                if (userExists == null)
+                {
+                    var insertedData = await _userManager.CreateAsync(user, "Abc1234$");
+
+                    if (insertedData.Succeeded)
+                    {
+                        await _userManager.AddToRoleAsync(user, "admin");
+                    }
+                }
+            }
         }
 
         public async Task DummyData()
@@ -48,13 +115,13 @@ namespace BLL.Services
         public async Task DummyData2()
         {
 
-            //var courseDummy = new Faker<Course>()
-            //    .RuleFor(o => o.Name, f => f.Name.FirstName())
-            //    .RuleFor(o => o.Code, f => f.Name.LastName())
-            //    .RuleFor(u => u.Credit, f => f.Random.Number(1, 10));
-            //var courseDummyList = courseDummy.Generate(50).ToList();
-            //await _context.Course.AddRangeAsync(courseDummyList);
-            //await _context.SaveChangesAsync();
+            var courseDummy = new Faker<Course>()
+                .RuleFor(o => o.Name, f => f.Name.FirstName())
+                .RuleFor(o => o.Code, f => f.Name.LastName())
+                .RuleFor(u => u.Credit, f => f.Random.Number(1, 10));
+            var courseDummyList = courseDummy.Generate(50).ToList();
+            await _context.Course.AddRangeAsync(courseDummyList);
+            await _context.SaveChangesAsync();
 
 
             var studentIds = await _context.Students.Select(x => x.StudentId).ToListAsync();
@@ -100,5 +167,6 @@ namespace BLL.Services
 
 
         }
+
     }
 }

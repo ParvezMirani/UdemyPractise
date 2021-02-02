@@ -6,14 +6,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using DLL.Models;
 using DLL.Models.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace DLL.DBContext
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<AppUser, AppRole, int,
+        IdentityUserClaim<int>, AppUserRole, IdentityUserLogin<int>,
+        IdentityRoleClaim<int>, IdentityUserToken<int>>
     {
         private const string _isDeletedProperty = "IsDeleted";
-        private static readonly MethodInfo _propertyMethod = typeof(EF).GetMethod(nameof(EF.Property), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(typeof(bool));
+        private static readonly MethodInfo _propertyMethod = typeof(EF)
+            .GetMethod(nameof(EF.Property), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(typeof(bool));
 
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
@@ -30,6 +35,7 @@ namespace DLL.DBContext
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
             {
                 if (typeof(ISoftDeletable).IsAssignableFrom(entity.ClrType) == true)
@@ -39,6 +45,8 @@ namespace DLL.DBContext
                         .HasQueryFilter(GetIsDeletedRestriction(entity.ClrType));
                 }
             }
+
+            base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<CourseStudent>()
                 .HasKey(bc => new { bc.CourseId, bc.StudentId });
@@ -51,7 +59,24 @@ namespace DLL.DBContext
                 .WithMany(c => c.CourseStudents)
                 .HasForeignKey(bc => bc.StudentId);
 
-            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<AppUser>(u =>
+            {
+                u.HasMany(e => e.AppUserRoles)
+                    .WithOne(e => e.User)
+                    .HasForeignKey(ur => ur.UserId)
+                    .IsRequired();
+            });
+
+            modelBuilder.Entity<AppRole>(r =>
+            {
+                r.HasMany(e => e.AppUserRoles)
+                    .WithOne(e => e.Role)
+                    .HasForeignKey(ur => ur.RoleId)
+                    .IsRequired();
+            });
+
+           
         }
 
 
@@ -62,7 +87,7 @@ namespace DLL.DBContext
 
             foreach (var entry in entries)
             {
-                if(entry.Entity is ITrackable trackable)
+                if (entry.Entity is ITrackable trackable)
                 {
                     switch (entry.State)
                     {
@@ -78,7 +103,7 @@ namespace DLL.DBContext
                             entry.State = EntityState.Modified;
                             break;
                     }
-                }                
+                }
             }
         }
 

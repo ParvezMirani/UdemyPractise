@@ -2,9 +2,12 @@ using System;
 using API.Middlewares;
 using BLL;
 using DLL;
+using DLL.DBContext;
+using DLL.Models;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,11 +41,19 @@ namespace API
                 config.AssumeDefaultVersionWhenUnspecified = true;
             });
 
+            IdentitySetup(services);
 
             DLLDependency.AllDependency(services,Configuration);
             BLLDependency.AllDependency(services, Configuration);
 
         }
+
+
+        private void IdentitySetup(IServiceCollection services)
+        {
+            services.AddIdentity<AppUser, AppRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+        }
+
 
         private void SetupSwagger(IServiceCollection services)
         {
